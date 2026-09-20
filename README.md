@@ -108,3 +108,7 @@ README.md
 2. Add an entry to the `plugins` array in `.claude-plugin/marketplace.json`.
 3. Bump `metadata.version` in the marketplace manifest and `version` in the plugin manifest.
 4. Push, then `/plugin marketplace update taggs-claude-plugins`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

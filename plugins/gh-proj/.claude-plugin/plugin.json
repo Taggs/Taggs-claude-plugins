@@ -7,6 +7,7 @@
   },
   "homepage": "https://github.com/Taggs/Taggs-claude-plugins",
   "repository": "https://github.com/Taggs/Taggs-claude-plugins",
+  "license": "MIT",
   "keywords": [
     "github",
     "project-management",
