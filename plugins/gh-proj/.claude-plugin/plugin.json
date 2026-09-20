@@ -1,0 +1,17 @@
+{
+  "name": "gh-proj",
+  "description": "Work-session discipline for GitHub projects: set up a repo's board, milestones, docs and Discord webhook, then audit and close out the session against them.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Taggs"
+  },
+  "homepage": "https://github.com/Taggs/Taggs-claude-plugins",
+  "repository": "https://github.com/Taggs/Taggs-claude-plugins",
+  "keywords": [
+    "github",
+    "project-management",
+    "session",
+    "handoff",
+    "docs"
+  ]
+}

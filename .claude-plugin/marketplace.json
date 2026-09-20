@@ -1,0 +1,17 @@
+{
+  "name": "taggs-claude-plugins",
+  "owner": {
+    "name": "Taggs"
+  },
+  "metadata": {
+    "description": "Neil Taggart's personal Claude Code plugins.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "gh-proj",
+      "source": "./plugins/gh-proj",
+      "description": "Work-session discipline for GitHub projects: set up a repo's board, milestones, docs and Discord webhook, then audit and close out the session against them."
+    }
+  ]
+}
