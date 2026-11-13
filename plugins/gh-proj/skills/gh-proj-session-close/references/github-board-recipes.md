@@ -285,6 +285,36 @@ that counts missing values:
 gh project item-list <N> --owner <ORG> --limit 3 --format json | jq '.items[1]'
 ```
 
+### Adding a single-select option WIPES every stored value — snapshot first
+
+`updateProjectV2Field` with `singleSelectOptions` **replaces the whole option set**. Every option
+gets a **new id**, and every item's value for that field is **cleared** — not remapped by name.
+Adding one `Status` option to a 160-item board silently blanked all 160 statuses (2026-09-28).
+It reports success; nothing warns you.
+
+The delete-and-recreate warning below is the same hazard, and it is easy to assume an *in-place*
+option update is safer. It is not.
+
+```bash
+# 1. SNAPSHOT FIRST — this is the only copy of the values you are about to destroy.
+gh project item-list <N> --owner <ORG> --limit 500 --format json > /tmp/board-before.json
+
+# 2. Mutate. List EVERY existing option, in order, or the ones you omit are deleted.
+gh api graphql -f query='mutation { updateProjectV2Field(input:{
+  fieldId:"PVTSSF_…", singleSelectOptions:[
+    {name:"Backlog", color:GRAY,   description:"…"},
+    {name:"Plan",    color:PURPLE, description:"…"},
+    …every other existing option…
+  ]}){ projectV2Field { ... on ProjectV2SingleSelectField { options { id name } } } } }'
+
+# 3. Restore, mapping OLD NAME -> NEW OPTION ID. Prefer ground truth where it beats the
+#    snapshot: a closed issue is Done regardless of what the snapshot recorded.
+# 4. Verify counts match the snapshot before doing anything else.
+```
+
+Doing it in the project's field settings UI instead takes fifteen seconds and does **not** clear
+values — strongly prefer that, and treat the mutation as the option of last resort.
+
 **Single-select options cannot be changed through the CLI.** `gh project field-create` makes a
 field with options; nothing in the CLI edits them afterwards. Changing `P0/P1/P2` to
 `Urgent/High/Medium/Low` needs either the GraphQL `updateProjectV2Field` mutation with
