@@ -115,10 +115,12 @@ Then the board itself:
   boards has two Statuses and two sets of dates, and nothing downstream can be trusted. Where
   several boards exist, consolidate onto one and use the built-in **Repository** field (derived, no
   maintenance) plus milestones to separate streams — not a second board.
-- **Status** (single select): `Backlog / Ready / In progress / In review / Done`. Keep the board's
-  existing options if it already has a working set, but `Ready` must exist, because it's what
-  `docs/next-steps.md` maps onto. Resist adding more — boards with nine statuses get used as boards
-  with two.
+- **Status** (single select): `Backlog / Plan / Ready / In progress / In review / Done`. Create all
+  six at once — adding one later replaces the whole option set and **clears every stored value**
+  (see the recipes file). Keep a board's existing options if it already has a working set, but
+  `Ready` must exist, because it's what `docs/next-steps.md` maps onto. Resist adding *more* —
+  boards with nine statuses get used as boards with two.
+  What each status means, and why `Plan` exists, is in taxonomy §8.
 - **Priority** (single select): `Urgent / High / Medium / Low` — **only if the org has no Priority
   issue field**. If it does, it is already there and already correct; don't add a second one.
 - **Start date** and **Target date**, both `DATE` — again, only if the org doesn't define them.
@@ -131,12 +133,18 @@ Then the board itself:
 
 A field's single-select options can't be edited through the CLI once created. If an existing field
 has the wrong options, check whether any item actually uses it: if none do, deleting and recreating
-costs nothing; if some do, it needs the GraphQL mutation or the user's hands in the UI.
+costs nothing; if some do, it needs the GraphQL mutation or the user's hands in the UI — and
+**the mutation clears every stored value on that field**, so snapshot the board first and plan to
+restore. The UI does not. Prefer the UI.
 
 Setting values:
 
 - **Status** from evidence — closed → Done, open PR → In review, work underway → In progress,
-  named in `docs/next-steps.md` → **Ready**, everything else → Backlog.
+  named in `docs/next-steps.md` → **Ready** when it is unblocked and nothing needs deciding first,
+  **Plan** when it is refined but waiting on a decision or has an open `blocked_by`, everything
+  else → Backlog. **Parked work is Backlog, never Ready**: deferred items, items
+  gated on work nobody has started (a later phase, a gold set, a paid account), and watch-only items
+  with nothing to do until something happens. `Ready` means someone could start it today.
 - **Start date**: the first commit or PR on that work where you know it (mark it actual), otherwise
   the estimate — target minus expected effort in working days.
 - **Target date**: required on every issue. Order the open work into waves by dependency, give each
@@ -177,12 +185,9 @@ wins and the other milestone keeps only its delivered work.
 Backfill every issue so nothing depends on remembering. Definitions and the reasoning are in
 `references/work-item-taxonomy.md`; commands in `references/github-board-recipes.md`.
 
-- **Type** on every issue: `Task` = planned, `Bug` = arising or unplanned, `Feature` = has
-  sub-issues. Check the org's available types first — types are org-wide, so adding one is the
-  user's decision, not a session's.
-- **Priority** on every issue, `Medium` by default.
-- **Exactly one** of `enhancement` / `bug` / `documentation`, by what the change *is* rather than
-  how it arose. Leave the user's own labels alone; flag any that duplicate a field.
+- **Type** (taxonomy §3), **Priority** (§5) and **exactly one core label** (§4) on every issue.
+  Types are org-wide, so adding one is the user's decision, not a session's. Leave the user's own
+  labels alone; flag any that duplicate a field.
 - **Relationships**: convert blockers stated in prose into real blocked-by links, and checklist
   subtasks into sub-issues. Only link what an issue, a decision record or an obvious ordering
   actually states — an invented blocker stops work that could have proceeded.

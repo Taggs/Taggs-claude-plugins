@@ -14,6 +14,11 @@ field of the same meaning is a duplicate, and duplicates disagree. Check the org
 anything, and read values from `gh api repos/O/R/issues/N --jq .issue_field_values`, because a
 mirrored field reads back empty through the project CLI whether or not it is set.
 
+**Personal accounts are the one exception.** Issue fields exist only for org-owned repos, and not
+on draft items. A board over a personal repo (or drafts) uses project-native `Priority`
+(Urgent / High / Medium / Low), `Start date` and `Target date` instead — same names, same options,
+so the rules below read identically. Never add `End date`, `Phase`, or a P0–P3 scale.
+
 ## 1. Milestone is the only word for a phase
 
 Epics and phases **are** milestones. Never a separate `Phase` board field, never `epic:*` or
@@ -37,25 +42,31 @@ API — not a checkbox in the body, which nothing can filter, count or schedule.
 
 ## 3. Type — set on creation, always
 
-| Type | Means | Test |
+Types are the org's own (`gh api orgs/<ORG>/issue-types`), and their descriptions are the
+definitions:
+
+| Type | Org description | Use it for |
 |---|---|---|
-| **Task** | Planned work | It was on the plan before anyone started |
-| **Bug** | Arising or unplanned work | It appeared because of something that happened — a defect, a review finding, a forced cleanup |
-| **Feature** | A collection of tasks | It has sub-issues |
+| **Task** | A specific piece of work | Chores, refactors, docs, infra, follow-ups — work that is neither a defect nor new functionality |
+| **Bug** | An unexpected problem or behavior | A defect: something behaves differently from what was intended |
+| **Feature** | A request, idea, or new functionality | Something a user or stakeholder would notice as new or changed capability |
 
-Planned versus arising is the primary split, and Type is what carries it. A Task that acquires
-sub-issues is **upgraded to Feature** at that moment; a Feature that loses its last sub-issue goes
-back to Task.
-
-Note the consequence and accept it deliberately: unplanned non-defect work is typed `Bug`, so bug
-counts measure unplanned work rather than defects. If a project wants defect rate as a signal, it
-needs a fourth type, which is an org-level decision, not one to make during a session.
+Type says what the work **is**. It does not say whether it was planned, and it does not depend on
+sub-issues: any type can have a parent or children, and nothing is "upgraded" when one is added.
+Work discovered mid-session is a `Bug` only if it is a defect; otherwise it is a `Task` or `Feature`.
 
 ## 4. Labels — exactly one of three
 
-`enhancement`, `bug`, `documentation`, chosen by **what the change is**, not by how it arose. An
-unplanned docs sweep is Type `Bug` and label `documentation`; the two fields answer different
-questions.
+`enhancement`, `bug`, `documentation`, chosen by **what the change is**. They must agree with Type:
+
+| Type | Core label |
+|---|---|
+| Bug | `bug` |
+| Feature | `enhancement` |
+| Task | any of the three — `documentation` for docs work, `enhancement` for improvements, `bug` never |
+
+A `bug` label on a non-Bug, or a Bug without the `bug` label, is a contradiction to fix. Type is the
+authority; correct the label.
 
 Anything else in the label list belongs to the user. Never auto-add and never auto-remove those —
 but *do* flag labels that duplicate a field (`phase:*` against milestones, `priority:*` against
@@ -92,13 +103,34 @@ similarity — a wrong blocker stops work that could have proceeded.
 
 ## 8. Status — and the next-steps rule
 
-`Backlog` → `Ready` → `In progress` → `In review` → `Done`.
+`Backlog` → `Plan` → `Ready` → `In progress` → `In review` → `Done`.
 
-- **Any issue named in `docs/next-steps.md` is `Ready`.** That file is the statement of what's next,
-  so the board must agree with it. The rule runs **one way only**: being named promotes an issue to
-  `Ready`; being absent never demotes one. The memo plans the next session — it is not a census of
+The three pre-work statuses answer **what is the next action**, not how important the issue is:
+
+| Status | Means | The next action is |
+|---|---|---|
+| `Backlog` | Not yet refined | Write down what it actually is |
+| `Plan` | Refined, but a **decision or design** stands between it and code | Someone has to *choose* something |
+| `Ready` | Executable now: refined, dated, unblocked | Pick it up and write code |
+
+`Plan` exists because "refined" and "actionable" are different things, and collapsing them forces
+two bad options: park a fully-specified issue in `Backlog` and imply it needs definition, or mark it
+`Ready` and imply someone can start. Both make the board lie. Typical `Plan` items: a question only
+the owner can answer, a design that must be agreed before implementation, an issue whose *work* is
+the decision.
+
+**Move `Plan` → `Ready` when the open question is answered**, not when someone feels ready. If you
+cannot name the question, the issue is `Ready` (or `Backlog`).
+
+- **Any issue named in `docs/next-steps.md` is at least `Plan`.** That file is the statement of
+  what's next, so the board must agree with it. The rule runs **one way only**: being named
+  promotes; being absent never demotes. The memo plans the next session — it is not a census of
   everything that is ready, and demoting on absence sweeps dated, unblocked, launch-critical work
   into `Backlog` and makes the board lie.
+- **Promote to `Ready` only if the issue has no open blockers.** An issue with an unresolved
+  `blocked_by` link is not executable, whatever the memo says about it; give it `Plan` (if the
+  blocker is a decision) or leave it where it is and say so in the report. Promoting blocked work
+  to `Ready` is how a board ends up claiming five things can start when none can.
 - Never walk a status backwards. `In progress`, `In review` and `Done` are further along than
   `Ready`; leave them.
 - Closed issue → `Done`. Open PR linked → `In review`. `Backlog` means **not yet refined**, so send
@@ -110,7 +142,7 @@ These cannot be resolved by a rule, so collect them and put them to the user wit
 
 - One issue that two phase taxonomies both claim.
 - A milestone whose name implies a phase that another milestone also covers.
-- An issue whose type is genuinely ambiguous because nobody remembers whether it was planned.
+- An issue whose type is genuinely ambiguous (a defect or a change of intended behaviour?).
 - A label that might be a user's own taxonomy rather than a field duplicate.
 - Any target date that has already passed.
 

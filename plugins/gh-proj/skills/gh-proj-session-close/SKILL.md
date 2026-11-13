@@ -70,6 +70,9 @@ the rest of the audit is unreliable until it's fixed.
 | Merged PR closed the issue, item still In progress | Set Done |
 | Open PR linked, item still Todo/Backlog | Set In review |
 | Item has no Status at all | Set from evidence; Backlog when there is none |
+| Refined issue whose next action is a decision, not code | `Plan` — not `Backlog` (it is defined) and not `Ready` (nobody can start) |
+| Item is `Ready` but has an open `blocked_by` | `Plan` if the blocker is a decision, else report it — `Ready` claims it is executable |
+| Item is `Ready` but **parked**: deferred, gated on work nobody has started (a later phase, a gold set, a paid account, "bundle with the next run"), or a watch-only item with no action until something happens | **Backlog**, with a one-line comment saying why. `Ready` is only for work someone could start today |
 | Issue worked this session still in Backlog | In progress, or Done if it shipped |
 | Repo issue that is not on the board | Add it, then give it a Status |
 | Item the user owns with no assignee | Assign to their login |
@@ -88,26 +91,22 @@ can't answer "what is due", which is the only question it exists to answer:
 | Milestone with every issue closed | Close it |
 | Milestone overdue with open issues | Report, with the open count and what's blocking |
 
-The slipped-target rule is the one worth defending: a board that quietly rewrites its own deadlines
-whenever they pass stops being evidence of anything. Surface each slip as one line — issue, old
-date, what stopped it — and let the user set the new date.
+Never rewrite a passed target date (taxonomy §7). Surface each slip as one line — issue, old date,
+what stopped it — and let the user set the new date.
 
 **Taxonomy drift** — the fields that decay fastest because nothing forces them at creation time.
 Full definitions in `references/work-item-taxonomy.md`.
 
-Before reporting anything as unset, run `gh api orgs/<ORG>/issue-fields`. Fields the org defines
-live on the issue and are only **mirrored** onto the board: `gh project field-list` shows them with
-no options and `gh project item-list` shows no value, whether or not they're set. Read those from
-`gh api repos/O/R/issues/N --jq .issue_field_values` and write them with `setIssueFieldValue` —
-otherwise a fully-populated project reports as completely unset, and a "fix" writes a duplicate
-project field alongside the real one.
+Before reporting anything as unset, run `gh api orgs/<ORG>/issue-fields`: org fields are only
+mirrored onto the board and read back empty there (see the taxonomy's opening section for how to
+read and write them). Skipping this reports a fully-populated project as unset.
 
 | Symptom | Fix |
 |---|---|
-| Issue with no Type | Set it: Task = planned, Bug = arising, Feature = has sub-issues |
-| Type `Task` that has sub-issues | Upgrade to `Feature` |
+| Issue with no Type | Set it (taxonomy §3) |
+| Core label contradicting Type (`bug` on a non-Bug, Bug without `bug`) | Fix the label; Type is the authority (taxonomy §4) |
 | Issue with no Priority | Set it; **Medium** unless the text justifies otherwise |
-| Issue with zero or two of `enhancement`/`bug`/`documentation` | Set exactly one, by what the change *is* |
+| Issue with zero or two of `enhancement`/`bug`/`documentation` | Set exactly one (taxonomy §4) |
 | `phase:*`, `priority:*`, `status:*` labels | Propose removal — they duplicate a field and will disagree with it |
 | A blocker stated only in prose ("waiting on the API key") | Create the real blocked-by link |
 | Subtasks as checkboxes in the body | Propose converting to sub-issues |
@@ -117,15 +116,11 @@ project field alongside the real one.
 Set Type, Priority and the core label directly. Removing a user's own labels, converting checklists
 and collapsing a Phase field are proposals: each one might be deliberate.
 
-**Rule 8 — the memo promotes, it never demotes.** Every issue named in `docs/next-steps.md` is
-`Ready` (unless it is already `In progress`, `In review` or `Done`, which are further along — never
-walk those back). Parse the memo for issue references and promote anything that isn't there yet.
-
-**Do not demote issues the memo omits.** The memo is a plan for the *next* session, not a census of
-everything that is ready; a dated, prioritised, unblocked issue is `Ready` whether or not the next
-five hours happen to touch it. Demoting on absence sweeps launch-critical work into `Backlog` and
-makes the board lie. `Backlog` means not yet refined — so move an issue there only when it is
-genuinely missing definition, and say why.
+**Status vs `docs/next-steps.md`** (taxonomy §8): promote every issue the memo names to at least
+`Plan`; promote to `Ready` only if it has no open blocker and no unanswered question; never demote
+an issue for being absent from the memo, and never walk `In progress`/`In review`/`Done` backwards.
+Being **parked** is a different reason and does demote: a parked `Ready` item goes to Backlog (the
+Status drift table above), because a `Ready` column full of parked work hides what can actually start.
 
 ## Step 2 — Issues: close what shipped, open what's left
 
@@ -145,7 +140,7 @@ field left for later is one that never gets filled:
 
 - a title that names the outcome, and context that will still be actionable in three months
 - acceptance criteria — an issue without them is a note, and notes get ignored
-- **Type** — almost always `Bug` here, since work a session *discovered* is by definition arising
+- **Type** — `Bug` only if what the session discovered is a defect; otherwise `Task` or `Feature`
 - **Priority** (Medium unless the text says otherwise) and exactly one core label
 - a milestone, an assignee, and on the board: Status, Start date, Target date
 - a link back to the PR or discussion it came from, and a **blocked-by link** if it waits on
@@ -219,13 +214,13 @@ Keep the file's existing header, voice and cross-links; replace the body. The te
 Don't let this file turn into a session diary. It is a memo about now; history belongs to git and
 the issues.
 
-**Every issue this file names must be `Ready` on the board** (rule 8, Step 1). Do that write as
+**Every issue this file names must be at least `Plan` on the board (Backlog if parked), and `Ready` if unblocked and not parked** (taxonomy §8, Step 1). Do that write as
 part of this step, not as an afterthought — writing the memo and setting the statuses are the same
 act, and splitting them is how they drift.
 
 ## Step 6 — Report
 
-Terse. Five headings, nothing else:
+Terse. These headings, nothing else:
 
 ```
 Fixed      — board and issue changes actually applied, one line each
